@@ -1,0 +1,2 @@
+shape_predictor_68_face_landmarks.dat.bz2
+압축해제한 하면 나오는 .dat파일을 실행하는 path에 넣고, 코드를 실행
