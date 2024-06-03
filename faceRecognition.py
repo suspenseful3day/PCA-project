@@ -17,11 +17,14 @@ class FaceRecog():
         files = os.listdir(dirname)
         for filename in files:
             name, ext = os.path.splitext(filename)
-            if ext == '.jpg':
+            if ext == '.jpg' or ext == '.JPG':
                 self.known_face_names.append(name)
                 pathname = os.path.join(dirname, filename)
                 img = face_recognition.load_image_file(pathname)
-                face_encoding = face_recognition.face_encodings(img)[0]
+                try:
+                    face_encoding = face_recognition.face_encodings(img)[0]
+                except IndexError as e:
+                    print(pathname, " ", e)
                 self.known_face_encodings.append(face_encoding)
 
         # 변수 초기화 작업
