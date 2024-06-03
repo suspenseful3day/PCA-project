@@ -8,19 +8,21 @@ class MainActivity() :
     # need to video setting
     def __init__(self) :
         # camera on
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         self.face_check = FaceCheck()
         self.collect = Collect()
-        self.is_quit = False
+        
+        self.start_capture()
 
     def __del__(self):
         self.cap.release()
-        cv2.destoryAllWindows()
+        cv2.destroyAllWindows()
 
     def start_capture(self) :
+        print(f"start capture")
         while True :
             ref, frame = self.cap.read()
-            self.face_check.face_detector(ref, frame)
+            self.face_check.face_detecting(ref, frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
