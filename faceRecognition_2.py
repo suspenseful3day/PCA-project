@@ -22,7 +22,7 @@ def detectAndDisplay(image):
     # 얼굴 임베딩 반복
     for encoding in encodings:
         # 입력 이미지의 각 얼굴과 학습된 데이터 매치
-        matches = face_recognition.compare_faces(data["encodings"], encoding)
+        matches = face_recognition.compare_faces(data["encodings"], encoding, tolerance=0.3)
         name = unknown_name
 
         # 데이터가 매치된 경우
@@ -37,7 +37,7 @@ def detectAndDisplay(image):
                 counts[name] = counts.get(name, 0) + 1
 
             # 가장 많은 표를 얻은 label 선택
-            
+            # print(counts)
             name = max(counts, key=counts.get)
         
         # 이름 목록 업데이트
