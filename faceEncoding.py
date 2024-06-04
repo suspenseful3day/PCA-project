@@ -1,4 +1,5 @@
 import cv2
+import re
 import os
 import face_recognition
 import pickle # 학습시킨 데이터를 pickle파일 형태로 저장
@@ -24,14 +25,17 @@ knownNames = []
 dirname = 'knowns'
 files = os.listdir(dirname)
 
+pattern = r"^(inface_[A-Z]+)"
+
 for (i, dataset_path) in enumerate(dataset_paths):
     # 사람 이름 추출
-    name = names[i]
     for filename in files:
         name, ext = os.path.splitext(filename)
         if ext == '.jpg' or ext == '.JPG':
-            knownNames.append(name)
             pathname = os.path.join(dirname, filename)
+
+            extracted_str = (str)[re.match(pattern, filename)]
+            print(extracted_str)
 
             # 입력 이미지를 load하고 BGR에서 RGB로 변환
             image = cv2.imread(pathname)
@@ -43,11 +47,12 @@ for (i, dataset_path) in enumerate(dataset_paths):
             # 얼굴 임베딩 계산
             encodings = face_recognition.face_encodings(rgb, boxes)
 
+
             # 인코딩 반복
             for encoding in encodings:
-                print(filename, name, encoding)
+                print(filename, extracted_str, encoding)
                 knownEncodings.append(encoding)
-                knownNames.append(name)
+                knownNames.append(extracted_str)
             
 # pickle파일 형태로 데이터 저장
 data = {"encodings": knownEncodings, "names": knownNames}

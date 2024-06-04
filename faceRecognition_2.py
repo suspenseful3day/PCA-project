@@ -9,7 +9,7 @@ unknown_name = 'Unknown'
 model_method = 'cnn-gpu'
 
 def detectAndDisplay(image):
-    start_time = time.time()
+    # start_time = time.time()
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     # 입력 이미지에서 각 얼굴에 해당하는 box 좌표를 감지하고 얼굴 임베딩 계산
@@ -37,7 +37,7 @@ def detectAndDisplay(image):
                 counts[name] = counts.get(name, 0) + 1
 
             # 가장 많은 표를 얻은 label 선택
-
+            
             name = max(counts, key=counts.get)
         
         # 이름 목록 업데이트
@@ -62,9 +62,9 @@ def detectAndDisplay(image):
         cv2.putText(image, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX,
             0.75, color, line)
 	
-    end_time = time.time()
+    # end_time = time.time()
     # 소요시간 체크
-    process_time = end_time - start_time
+    # process_time = end_time - start_time
 
     return image
     
@@ -72,6 +72,7 @@ def detectAndDisplay(image):
 data = pickle.loads(open(encoding_file, "rb").read())
 
 cam = cv2.VideoCapture(0)
+
 while True:
     ret, frame = cam.read()
     frame = detectAndDisplay(frame)
