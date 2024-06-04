@@ -8,7 +8,7 @@ class FaceRecog():
     def __init__(self):
         #카메라 켜기
         self.camera = camera.VideoCamera()
-
+        self.model_method = 'cnn-gpu'
         self.known_face_encodings = []
         self.known_face_names = []
 
@@ -22,7 +22,7 @@ class FaceRecog():
                 pathname = os.path.join(dirname, filename)
                 img = face_recognition.load_image_file(pathname)
                 try:
-                    face_encoding = face_recognition.face_encodings(img)[0]
+                    face_encoding = face_recognition.face_encodings(img, model=self.model_method)[0]
                 except IndexError as e:
                     print(pathname, " ", e)
                 self.known_face_encodings.append(face_encoding)
@@ -44,7 +44,7 @@ class FaceRecog():
         small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
         # 이미지를 BGR 색상(OpenCV 사용)에서 RGB 색상(face_recognition 사용)으로 변환
-        rgb_small_frame = small_frame[:, :, ::-1]
+        rgb_small_frame = np.ascontiguousarray(small_frame[:, :, ::-1])
 
         # Only process every other frame of video to save time
         if self.process_this_frame:
