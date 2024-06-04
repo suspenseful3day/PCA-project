@@ -18,9 +18,9 @@ class VideoCamera(object):
     def get_frame(self):
         # Grab a single frame of video
         ret, frame = self.video.read()
-        return frame
+        return ret, frame
 
-
+'''
 if __name__ == '__main__':
     cam = VideoCamera()
     while True:
@@ -37,3 +37,4 @@ if __name__ == '__main__':
     # do a bit of cleanup
     cv2.destroyAllWindows()
     print('finish')
+'''

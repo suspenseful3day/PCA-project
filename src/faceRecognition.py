@@ -1,114 +1,90 @@
-import face_recognition
 import cv2
+import face_recognition
+import pickle
 import camera
-import os
-import numpy as np
 
 class FaceRecog():
     def __init__(self):
-        #카메라 켜기
-        self.camera = camera.VideoCamera()
+        self.encoding_file = 'data/encodings.pickle'
+        self.unknown_name = 'Unknown'
         self.model_method = 'cnn-gpu'
-        self.known_face_encodings = []
-        self.known_face_names = []
+        # 학습된 데이터 load
+        self.data = pickle.loads(open(self.encoding_file, "rb").read())
 
-        # 샘플사진을 올리고 이를 인식하는 방법을 학습
-        dirname = 'knowns'
-        files = os.listdir(dirname)
-        for filename in files:
-            name, ext = os.path.splitext(filename)
-            if ext == '.jpg' or ext == '.JPG':
-                self.known_face_names.append(name)
-                pathname = os.path.join(dirname, filename)
-                img = face_recognition.load_image_file(pathname)
-                try:
-                    face_encoding = face_recognition.face_encodings(img, model=self.model_method)[0]
-                except IndexError as e:
-                    print(pathname, " ", e)
-                self.known_face_encodings.append(face_encoding)
+        self.cam = camera.VideoCamera()
 
-        # 변수 초기화 작업
-        self.face_locations = []
-        self.face_encodings = []
-        self.face_names = []
-        self.process_this_frame = True
+        while True:
+            ret, frame = self.cam.get_frame()
+            frame = self.FaceDetecting(frame)
+            # show the frame
+            cv2.imshow("Frame", frame)
+            key = cv2.waitKey(1) & 0xFF
 
-    def __del__(self):
-        del self.camera
+            # if the `q` key was pressed, break from the loop
+            if key == ord("q"):
+                break
 
-    def get_frame(self):
-        # 비디오의 단일 프레임 캡처
-        frame = self.camera.get_frame()
+    def __del__(self):            
+        # do a bit of cleanup
+        cv2.destroyAllWindows()
+        print('finish')
 
-        # 얼굴 인식 처리를 위해 비디오 프레임을 1/4크기로 조정
-        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+    def FaceDetecting(self, image):
+        # start_time = time.time()
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # 이미지를 BGR 색상(OpenCV 사용)에서 RGB 색상(face_recognition 사용)으로 변환
-        rgb_small_frame = np.ascontiguousarray(small_frame[:, :, ::-1])
+        # 입력 이미지에서 각 얼굴에 해당하는 box 좌표를 감지하고 얼굴 임베딩 계산
+        boxes = face_recognition.face_locations(rgb, model=self.model_method)
+        encodings = face_recognition.face_encodings(rgb, boxes)
 
-        # Only process every other frame of video to save time
-        if self.process_this_frame:
-            # 현재 비디오 프레임에서 모든 얼굴과 얼굴 인코딩 찾기
-            self.face_locations = face_recognition.face_locations(rgb_small_frame)
-            self.face_encodings = face_recognition.face_encodings(rgb_small_frame, self.face_locations)
+        # 감지된 각 얼굴의 이름 목록 초기화
+        names = []
 
-            self.face_names = []
-            for face_encoding in self.face_encodings:
-                # 알려진 얼굴(들)과 일치하는지 확인
-                distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
-                min_value = min(distances)
+        # 얼굴 임베딩 반복
+        for encoding in encodings:
+            # 입력 이미지의 각 얼굴과 학습된 데이터 매치
+            matches = face_recognition.compare_faces(self.data["encodings"], encoding, tolerance=0.3)
+            name = self.unknown_name
 
-                # tolerance: 얼굴 간 거리를 얼마나 고려할 것인지. 낮을수록 엄격
-                # (0.6 이 일반적으로 최상의 성능)
-                name = "Unknown"
-                if min_value < 0.6:
-                    index = np.argmin(distances)
-                    name = self.known_face_names[index]
+            # 데이터가 매치된 경우
+            if True in matches:
+                # 일치하는 모든 얼굴의 인덱스를 찾고, 얼굴 일치 횟수 계산을 위한 초기화
+                matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+                counts = {}
 
-                self.face_names.append(name)
+                # 일치하는 인덱스를 반복하고, 인식된 각 얼굴의 수 유지
+                for i in matchedIdxs:
+                    name = self.data["names"][i]
+                    counts[name] = counts.get(name, 0) + 1
 
-        self.process_this_frame = not self.process_this_frame
+                # 가장 많은 표를 얻은 label 선택
+                # print(counts)
+                name = max(counts, key=counts.get)
+            
+            # 이름 목록 업데이트
+            names.append(name)
 
-        # 결과 표시
-        for (top, right, bottom, left), name in zip(self.face_locations, self.face_names):
-            # 감지된 프레임을 1/4 크기로 조정했으므로 얼굴 위치를 다시 확장
-            top *= 4
-            right *= 4
-            bottom *= 4
-            left *= 4
+        # 인식된 얼굴 반복
+        for ((top, right, bottom, left), name) in zip(boxes, names):
+            # 이미지에 인식된 얼굴의 box를 그림
+            y = top - 15 if top - 15 > 15 else top + 15
+            # 학습된 얼굴(인식한 얼굴)의 경우 녹색 선
+            color = (0, 255, 0)
+            line = 2
+            # 학습되지 않은 얼굴(인식하지 못한 얼굴)의 경우 빨간색 선
+            if(name == self.unknown_name):
+                color = (0, 0, 255)
+                line = 1
+                name = ''
+            # 사각형 그리기
+            cv2.rectangle(image, (left, top), (right, bottom), color, line)
+            y = top - 15 if top - 15 > 15 else top + 15
+            # 텍스트 추가
+            cv2.putText(image, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX,
+                0.75, color, line)
+        
+        # end_time = time.time()
+        # 소요시간 체크
+        # process_time = end_time - start_time
 
-            # 얼굴 주위에 상자 그리기
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-            # 얼굴 아래에 이름을 포함한 레이블 그리기
-            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
-
-        return frame
-
-    def get_jpg_bytes(self):
-        frame = self.get_frame()
-        # Motion JPEG을 사용 중이지만 OpenCV는 기본적으로 원시 이미지를 캡처하므로
-        # 비디오 스트림을 올바르게 표시하기 위해 JPEG로 인코딩.
-        ret, jpg = cv2.imencode('.jpg', frame)
-        return jpg.tobytes()
-
-
-if __name__ == '__main__':
-    face_recog = FaceRecog()
-    print(face_recog.known_face_names)
-    while True:
-        frame = face_recog.get_frame()
-
-        # 프레임 표시
-        cv2.imshow("Frame", frame)
-        key = cv2.waitKey(1) & 0xFF
-
-        # q키가 눌리면 루프 종료
-        if key == ord("q"):
-            break
-
-    # 정리 작업
-    cv2.destroyAllWindows()
-    print('finish')
+        return image
