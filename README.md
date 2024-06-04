@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ```
 
 ### Running
-Must be play in project folder
+Must be run in project folder
 
 ```shell
 python src/main.py
