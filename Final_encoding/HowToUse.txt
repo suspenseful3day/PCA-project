@@ -1,0 +1,17 @@
+
+
+pikle파일 생성
+{
+    /content/drive/MyDrive
+    이 경로에 
+    사진이 담긴
+    디렉토리들이 있는
+    knowns라는 이름의 파일을 저장함 ( == colab에 업로드)
+
+    코랩에 colabEncoding.py내용을 그대로 복붙
+    코드실행
+}
+
+
+코드 실행 후, 생성된 pikle파일을 로컬로 다운로드해서
+faceRecognition실행
