@@ -40,6 +40,8 @@ def detectAndDisplay(image):
 
             name = max(counts, key=counts.get)
         
+        print(name)
+        
         # 이름 목록 업데이트
         names.append(name)
 
@@ -51,10 +53,10 @@ def detectAndDisplay(image):
         color = (0, 255, 0)
         line = 2
         # 학습되지 않은 얼굴(인식하지 못한 얼굴)의 경우 빨간색 선
-        if(name == unknown_name):
-            color = (0, 0, 255)
-            line = 1
-            name = ''
+        # if(name == unknown_name):
+        #     color = (0, 0, 255)
+        #     line = 1
+        #     name = 'unkown_name'
         # 사각형 그리기
         cv2.rectangle(image, (left, top), (right, bottom), color, line)
         y = top - 15 if top - 15 > 15 else top + 15
