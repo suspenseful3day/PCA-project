@@ -4,10 +4,9 @@ import os
 import face_recognition
 import pickle # 학습시킨 데이터를 pickle파일 형태로 저장
 
-
 class faceEncoding():
     def __init__(self):
-        self.dataset_paths = ['knowns/']
+        self.dataset_paths = 'drive/MyDrive/linearAlgebra2_face_detection_datasets/'
         self.names = ['1']
         self.image_type = '.jpg' or '.JPG'
         self.encoding_file = 'encodings.pickle'
@@ -24,38 +23,32 @@ class faceEncoding():
 
     def face_encoding_and_save(self):
         # 이미지 경로 반복
-        dirname = 'knowns'
-        files = os.listdir(dirname)
+        dataset_file = os.listdir(self.dataset_paths)
 
-        pattern = r"^(inface_[A-Z]+)"
+        for team_file in dataset_file:
+            path_name = os.path.join(self.dataset_paths, team_file)
+            team_files = os.listdir(path_name)
 
-        for (i, dataset_path) in enumerate(self.dataset_paths):
-            # 사람 이름 추출
-            for filename in files:
-                name, ext = os.path.splitext(filename)
-                if ext == '.jpg' or ext == '.JPG':
-                    pathname = os.path.join(dirname, filename)
+            for name_file in team_files:
+                path_name = os.path.join(self.dataset_paths, team_file, name_file)
+                name_files = os.listdir(path_name)
 
-                    extracted_str = (str)[re.match(pattern, filename)]
-                    print(extracted_str)
-
+                for img in name_files :
+                    path_name = os.path.join(self.dataset_paths, team_file, name_file, img)
                     # 입력 이미지를 load하고 BGR에서 RGB로 변환
-                    image = cv2.imread(pathname)
+                    image = cv2.imread(path_name)
                     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
                     # 입력 이미지에서 얼굴에 해당하는 box의 (x, y) 좌표 감지
                     boxes = face_recognition.face_locations(rgb, model=self.model_method)
 
                     # 얼굴 임베딩 계산
                     encodings = face_recognition.face_encodings(rgb, boxes)
 
-
                     # 인코딩 반복
                     for encoding in encodings:
-                        print(filename, extracted_str, encoding)
                         self.knownEncodings.append(encoding)
-                        self.knownNames.append(extracted_str)
-                    
+                        self.knownNames.append(name_file)
+                      
         # pickle파일 형태로 데이터 저장
         data = {"encodings": self.knownEncodings, "names": self.knownNames}
         f = open(self.encoding_file, "wb")
