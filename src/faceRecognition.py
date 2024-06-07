@@ -40,17 +40,25 @@ class FaceRecog():
         # 감지된 각 얼굴의 이름 목록 초기화
         names = []
 
+        # 유사도 추가
+        similarities = []
+
         # 얼굴 임베딩 반복
         for encoding in encodings:
             # 입력 이미지의 각 얼굴과 학습된 데이터 매치
             matches = face_recognition.compare_faces(self.data["encodings"], encoding, tolerance=0.3)
+            face_distances = face_recognition.face_distance(self.data["encodings"], encoding)
             name = self.unknown_name
+            similarity = None
 
             # 데이터가 매치된 경우
             if True in matches:
                 # 일치하는 모든 얼굴의 인덱스를 찾고, 얼굴 일치 횟수 계산을 위한 초기화
                 matchedIdxs = [i for (i, b) in enumerate(matches) if b]
                 counts = {}
+
+                # 유사도 계산을 위해 최소 거리 선택
+                best_match_index = face_distances.argmin()
 
                 # 일치하는 인덱스를 반복하고, 인식된 각 얼굴의 수 유지
                 for i in matchedIdxs:
@@ -60,9 +68,13 @@ class FaceRecog():
                 # 가장 많은 표를 얻은 label 선택
                 # print(counts)
                 name = max(counts, key=counts.get)
+                similarity = 1 - face_distances[best_match_index]  # 유사도 계산 (1 - 거리)
+
             
             # 이름 목록 업데이트
             names.append(name)
+            # 유사도 목록 업데이트
+            similarities.append(similarity)
 
         # 인식된 얼굴 반복
         for ((top, right, bottom, left), name) in zip(boxes, names):
@@ -82,6 +94,9 @@ class FaceRecog():
             # 텍스트 추가
             cv2.putText(image, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX,
                 0.75, color, line)
+            # 텍스트 추가
+            similarity_text = f"{name}: {similarity:.2f}" if similarity is not None else name
+            cv2.putText(image, similarity_text, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, line)
         
         # end_time = time.time()
         # 소요시간 체크
