@@ -1,0 +1,127 @@
+import cv2
+import face_recognition
+import pickle
+import camera
+import numpy as np
+from collections import defaultdict
+from sklearn.metrics import confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+class FaceRecog():
+    def __init__(self):
+        self.encoding_file = 'data/encodings.pickle'
+        self.unknown_name = 'Unknown'
+        self.model_method = 'cnn-gpu'
+        # 학습된 데이터 load
+        self.data = pickle.loads(open(self.encoding_file, "rb").read())
+
+        self.cam = camera.VideoCamera()
+
+        self.name_cnt = defaultdict(int)
+
+        self.actual_labels = []
+        self.predicted_labels = []
+
+        while True:
+            ret, frame = self.cam.get_frame()
+            frame, name = self.FaceDetecting(frame)
+            self.name_cnt[name] += 1
+
+            # 실제 라벨과 예측 라벨 기록
+            self.actual_labels.append(self.get_actual_label(frame))  # 실제 라벨을 가져오는 함수 필요
+            self.predicted_labels.append(name)
+
+            # show the frame
+            cv2.imshow("INFACE", frame)
+            key = cv2.waitKey(1) & 0xFF
+
+            # if the `q` key was pressed, break from the loop
+            if key == ord("q"):
+                break
+
+        self.generate_confusion_matrix()
+
+    def __del__(self):            
+        # do a bit of cleanup
+        white_image = np.ones((500, 800, 3), np.uint8) * 255
+        
+        if not self.name_cnt:
+            name = "Unknown"
+        else:
+            name = max(self.name_cnt, key=self.name_cnt.get)
+            
+        text = f"Your name is {name}"
+        cv2.putText(white_image, text, (250, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
+        cv2.imshow("INFACE", white_image)
+
+        while True:
+            key = cv2.waitKey(1) & 0xFF
+
+            if key == ord("q"):
+                break      
+
+        cv2.destroyAllWindows()
+        print('finish')
+
+    def FaceDetecting(self, image):
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        boxes = face_recognition.face_locations(rgb, model=self.model_method)
+        encodings = face_recognition.face_encodings(rgb, boxes)
+        names = []
+        similarities = []
+
+        for encoding in encodings:
+            matches = face_recognition.compare_faces(self.data["encodings"], encoding, tolerance=0.3)
+            face_distances = face_recognition.face_distance(self.data["encodings"], encoding)
+            name = self.unknown_name
+            similarity = None
+
+            if True in matches:
+                matchedIdxs = [i for (i, b) in enumerate(matches) if b]
+                counts = {}
+                best_match_index = face_distances.argmin()
+
+                for i in matchedIdxs:
+                    name = self.data["names"][i]
+                    counts[name] = counts.get(name, 0) + 1
+
+                name = max(counts, key=counts.get)
+                similarity = 1 - face_distances[best_match_index]
+
+            names.append(name)
+            similarities.append(similarity)
+
+        for ((top, right, bottom, left), name) in zip(boxes, names):
+            y = top - 15 if top - 15 > 15 else top + 15
+            color = (0, 255, 0)
+            line = 2
+            if(name == self.unknown_name):
+                color = (0, 0, 255)
+                line = 1
+                name = 'Unknown'
+            cv2.rectangle(image, (left, top), (right, bottom), color, line)
+            y = top - 15 if top - 15 > 15 else top + 15
+            cv2.putText(image, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, line)
+            similarity_text = f"{name}: {similarity:.2f}" if similarity is not None else name
+            cv2.putText(image, similarity_text, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, line)
+
+        if not names:
+            names.append('Unknown')
+
+        return image, names[0]
+
+    def get_actual_label(self, frame):
+        return 'Unknown'
+
+    def generate_confusion_matrix(self):
+        cm = confusion_matrix(self.actual_labels, self.predicted_labels)
+        report = classification_report(self.actual_labels, self.predicted_labels)
+        print("Confusion Matrix:\n", cm)
+        print("\nClassification Report:\n", report)
+
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt="d")
+        plt.xlabel('Predicted')
+        plt.ylabel('Actual')
+        plt.show()
