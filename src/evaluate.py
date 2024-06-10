@@ -14,8 +14,7 @@ class FaceRecog:
         self.data = pickle.loads(open(self.encoding_file, "rb").read())
 
         # Split the dataset into training and testing sets
-        self.train_data, self.test_data, self.name_groups = self.split_dataset(self.data, test_size=0.3)
-
+        self.name_groups = self.split_dataset(self.data, test_size=0.3)
         # Evaluate the model
         self.evaluate_model()
 
@@ -26,7 +25,8 @@ class FaceRecog:
         # Parse filenames to extract the names
         name_to_encodings = defaultdict(list)
         for encoding, name in zip(encodings, names):
-            name_key = name.split('_')[1]  # Extract the name part
+            # name_key = name.split('_')[1]  # Extract the name part
+            name_key = name
             name_to_encodings[name_key].append((encoding, name))
 
         train_encodings = []
@@ -38,26 +38,28 @@ class FaceRecog:
 
         # Split each group into training and testing sets
         for name_key, encodings_list in name_to_encodings.items():
-            if len(encodings_list) == 100:  # Only consider names with exactly 100 samples
-                random.shuffle(encodings_list)
-                split_index = int(len(encodings_list) * (1 - test_size))
-                train_list = encodings_list[:split_index]
-                test_list = encodings_list[split_index:]
+            # if len(encodings_list) == 100:  # Only consider names with exactly 100 samples
+            random.shuffle(encodings_list)
+            split_index = int(len(encodings_list) * (1 - test_size))
+            train_list = encodings_list[:split_index]
+            test_list = encodings_list[split_index:]
 
-                name_groups[name_key] = {
-                    'train': train_list,
-                    'test': test_list
-                }
 
-                for encoding, name in train_list:
-                    train_encodings.append(encoding)
-                    train_names.append(name)
-                
-                for encoding, name in test_list:
-                    test_encodings.append(encoding)
-                    test_names.append(name)
 
-        return {"encodings": train_encodings, "names": train_names}, {"encodings": test_encodings, "names": test_names}, name_groups
+            name_groups[name_key] = {
+                'train': train_list,
+                'test': test_list
+            }
+
+            for encoding, name in train_list:
+                train_encodings.append(encoding)
+                train_names.append(name)
+
+            for encoding, name in test_list:
+                test_encodings.append(encoding)
+                test_names.append(name)
+
+        return name_groups
 
     def evaluate_model(self):
         overall_correct_predictions = 0
