@@ -2,14 +2,12 @@ import cv2
 import face_recognition
 import pickle
 import camera
-import time
 import numpy as np
 from collections import defaultdict
 
 class FaceRecog():
     def __init__(self):
         self.encoding_file = 'data/encodings.pickle'
-        # self.encoding_file = 'data/preprocessing-encodings.pickle'
         self.unknown_name = 'Unknown'
         self.model_method = 'cnn-gpu'
         # 학습된 데이터 load
@@ -41,8 +39,11 @@ class FaceRecog():
             name = "Unknown"
         else:
             name = max(self.name_cnt, key=self.name_cnt.get)
+            _sum = sum(self.name_cnt.values())
             
-        text = f"Your name is {name}"
+            FRR = ((_sum - max(self.name_cnt.values())) / _sum) * 100
+            
+        text = f"Your name is {name}, FRR: {FRR:.2f}%"
         cv2.putText(white_image, text, (250, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 2)
         cv2.imshow("INFACE", white_image)
 
@@ -57,7 +58,6 @@ class FaceRecog():
 
     def FaceDetecting(self, image):
         # start_time = time.time()
-        # image = cv2.fastNlMeansDenoisingColored(def_image, None, 10, 10, 7, 21)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # 입력 이미지에서 각 얼굴에 해당하는 box 좌표를 감지하고 얼굴 임베딩 계산
@@ -97,7 +97,6 @@ class FaceRecog():
                 name = max(counts, key=counts.get)
                 similarity = 1 - face_distances[best_match_index]  # 유사도 계산 (1 - 거리)
 
-            
             # 이름 목록 업데이트
             names.append(name)
             # 유사도 목록 업데이트
