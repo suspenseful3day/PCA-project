@@ -30,8 +30,10 @@ class FaceEncoding:
 
                 for img in name_files:
                     path_name = os.path.join(self.dataset_paths, team_file, name_file, img)
+
                     image = cv2.imread(path_name, cv2.IMREAD_GRAYSCALE)
                     rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                    
                     boxes = face_recognition.face_locations(rgb, model=self.model_method)
                     encodings = face_recognition.face_encodings(rgb, boxes)
 

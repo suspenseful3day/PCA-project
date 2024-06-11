@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class FaceRecog:
     def __init__(self):
-        self.encoding_file = 'data/encodings.pickle'
+        self.encoding_file = 'data/preprocessing-encodings.pickle'
         self.unknown_name = 'Unknown'
         self.model_method = 'cnn'
 
@@ -55,11 +55,11 @@ class FaceRecog:
         for name_key, encodings_list in name_to_encodings.items():
             # if len(encodings_list) == 100:  # Only consider names with exactly 100 samples
             random.shuffle(encodings_list)
+            print(len(encodings_list))
             split_index = int(len(encodings_list) * (1 - test_size))
+            print(split_index)
             train_list = encodings_list[:split_index]
             test_list = encodings_list[split_index:]
-
-
 
             name_groups[name_key] = {
                 'train': train_list,
@@ -101,7 +101,7 @@ class FaceRecog:
 
 
             for encoding, true_name in zip(test_encodings, test_names):
-                matches = face_recognition.compare_faces(train_encodings, encoding, tolerance=0.3)  # Adjusted tolerance
+                matches = face_recognition.compare_faces(train_encodings, encoding, tolerance=0.4)  # Adjusted tolerance
                 face_distances = face_recognition.face_distance(train_encodings, encoding)
                 name = self.unknown_name
 

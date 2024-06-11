@@ -21,7 +21,8 @@ class FaceRecog():
         while True:
             ret, frame = self.cam.get_frame()
             frame, name = self.FaceDetecting(frame)
-            self.name_cnt[name] += 1
+            if not name == 'Unknown' :
+                self.name_cnt[name] += 1
             # show the frame
             cv2.imshow("INFACE", frame)
             key = cv2.waitKey(1) & 0xFF
@@ -38,6 +39,7 @@ class FaceRecog():
         
         if not self.name_cnt:
             name = "Unknown"
+            FRR = 0
         else:
             name = max(self.name_cnt, key=self.name_cnt.get)
             _sum = sum(self.name_cnt.values())
@@ -76,7 +78,7 @@ class FaceRecog():
         # 얼굴 임베딩 반복
         for encoding in encodings:
             # 입력 이미지의 각 얼굴과 학습된 데이터 매치
-            matches = face_recognition.compare_faces(self.data["encodings"], encoding, tolerance=0.3)
+            matches = face_recognition.compare_faces(self.data["encodings"], encoding, tolerance=0.35)
             face_distances = face_recognition.face_distance(self.data["encodings"], encoding)
             name = self.unknown_name
             similarity = None
