@@ -3,6 +3,8 @@ import pickle
 import random
 import numpy as np
 from collections import defaultdict
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 class FaceRecog:
     def __init__(self):
@@ -16,7 +18,20 @@ class FaceRecog:
         # Split the dataset into training and testing sets
         self.name_groups = self.split_dataset(self.data, test_size=0.3)
         # Evaluate the model
-        self.evaluate_model()
+        y_true, y_pred = self.evaluate_model()
+
+        self.plot_confusion_matrix(y_true, y_pred)
+
+    def plot_confusion_matrix(self, y_true, y_pred):
+        labels = sorted(list(set(y_true) | set(y_pred)))
+
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
+        cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+
+        cm_display.plot(cmap=plt.cm.Blues)
+        plt.xticks(rotation=45, ha='right')
+        plt.title('Confusion Matrix')
+        plt.show()
 
     def split_dataset(self, data, test_size=0.3):
         encodings = data["encodings"]
@@ -64,6 +79,9 @@ class FaceRecog:
     def evaluate_model(self):
         overall_correct_predictions = 0
         overall_total_predictions = 0
+    
+        y_true = []
+        y_pred = []
 
         for name_key, groups in self.name_groups.items():
             train_list = groups['train']
@@ -80,8 +98,10 @@ class FaceRecog:
             correct_predictions = 0
             total_predictions = len(test_encodings)
 
+
+
             for encoding, true_name in zip(test_encodings, test_names):
-                matches = face_recognition.compare_faces(train_encodings, encoding, tolerance=0.5)  # Adjusted tolerance
+                matches = face_recognition.compare_faces(train_encodings, encoding, tolerance=0.3)  # Adjusted tolerance
                 face_distances = face_recognition.face_distance(train_encodings, encoding)
                 name = self.unknown_name
 
@@ -97,6 +117,9 @@ class FaceRecog:
 
                 if name == true_name:
                     correct_predictions += 1
+                
+                y_true.append(true_name)
+                y_pred.append(name)
 
             accuracy = correct_predictions / total_predictions
             overall_correct_predictions += correct_predictions
@@ -106,6 +129,8 @@ class FaceRecog:
 
         overall_accuracy = overall_correct_predictions / overall_total_predictions
         print(f"Overall model accuracy: {overall_accuracy:.2f} ({overall_correct_predictions}/{overall_total_predictions})")
+
+        return y_true, y_pred
 
 if __name__ == "__main__":
     fr = FaceRecog()
