@@ -9,6 +9,7 @@ from collections import defaultdict
 class FaceRecog():
     def __init__(self):
         self.encoding_file = 'data/encodings.pickle'
+        # self.encoding_file = 'data/preprocessing-encodings.pickle'
         self.unknown_name = 'Unknown'
         self.model_method = 'cnn-gpu'
         # 학습된 데이터 load
@@ -56,6 +57,7 @@ class FaceRecog():
 
     def FaceDetecting(self, image):
         # start_time = time.time()
+        # image = cv2.fastNlMeansDenoisingColored(def_image, None, 10, 10, 7, 21)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # 입력 이미지에서 각 얼굴에 해당하는 box 좌표를 감지하고 얼굴 임베딩 계산
