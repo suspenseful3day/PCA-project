@@ -7,7 +7,8 @@
 
 ### Installation
 ```shell
-pip install -r requirements.txt
+conda create --name mypython python=3.7
+pip install -r requirement.txt
 ```
 
 ### Running
