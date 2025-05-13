@@ -1,6 +1,6 @@
 face_recognition
 numpy
 scikit-learn
-pickle
+pickle5
 cv2
 matplotlib
